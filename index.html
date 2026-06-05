@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Nur Phone POS Full</title>
+
+<style>
+body{font-family:Arial;background:#eef2f7;padding:15px;}
+.box{background:white;max-width:1000px;margin:auto;padding:15px;border-radius:12px;}
+
+input,button{padding:10px;margin:5px;width:95%;}
+button{background:#1976d2;color:white;border:none;border-radius:8px;}
+
+table{width:100%;margin-top:10px;border-collapse:collapse;}
+th,td{border-bottom:1px solid #ddd;padding:8px;text-align:center;}
+
+h2,h3{text-align:center;}
+
+.hide{display:none;}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+
+<h2>📱 Nur Phone POS</h2>
+
+<!-- LOGIN -->
+<div id="login">
+  <input id="user" placeholder="Username">
+  <input id="pass" type="password" placeholder="Password">
+  <button onclick="login()">Login</button>
+</div>
+
+<!-- APP -->
+<div id="app" class="hide">
+
+<h3 id="roleText"></h3>
+
+<!-- SEARCH -->
+<h3>🔎 Search</h3>
+<input id="searchBox" onkeyup="search()" placeholder="Search product...">
+
+<!-- SELL -->
+<h3>🛒 Sell</h3>
+
+<input id="sellName" placeholder="Product name">
+<input id="sellQty" placeholder="Qty">
+<button onclick="sell()">Sell</button>
+
+<!-- CREDIT -->
+<h3>💰 Credit</h3>
+
+<input id="cname" placeholder="Customer name">
+<input id="cphone" placeholder="Phone">
+<input id="ctotal" placeholder="Total">
+<input id="cpaid" placeholder="Paid">
+<button onclick="addCredit()">Save</button>
+
+<table>
+<tr><th>Name</th><th>Phone</th><th>Total</th><th>Paid</th><th>Remain</th></tr>
+<tbody id="clist"></tbody>
+</table>
+
+<!-- ADMIN ONLY -->
+<div id="adminPanel" class="hide">
+
+<h3>📦 Products</h3>
+
+<input id="name" placeholder="Product">
+<input id="price" placeholder="Price">
+<input id="stock" placeholder="Stock">
+<button onclick="addProduct()">Add / Update</button>
+
+<table>
+<tr><th>Name</th><th>Price</th><th>Stock</th></tr>
+<tbody id="plist"></tbody>
+</table>
+
+</div>
+
+<br>
+<button onclick="window.print()">🖨 Print</button>
+
+</div>
+
+</div>
+
+<script>
+
+/* USERS */
+let users=[
+  {u:"admin",p:"1234",role:"admin"},
+  {u:"cashier",p:"1111",role:"cashier"}
+];
+
+let role="";
+
+let products=JSON.parse(localStorage.getItem("p")||"[]");
+let credits=JSON.parse(localStorage.getItem("c")||"[]");
+
+function save(){
+  localStorage.setItem("p",JSON.stringify(products));
+  localStorage.setItem("c",JSON.stringify(credits));
+}
+
+/* LOGIN */
+function login(){
+  let u=user.value;
+  let p=pass.value;
+
+  let ok=users.find(x=>x.u==u&&x.p==p);
+
+  if(!ok){alert("Wrong login");return;}
+
+  role=ok.role;
+
+  login.style.display="none";
+  app.classList.remove("hide");
+
+  roleText.innerText="Role: "+role;
+
+  if(role=="admin") adminPanel.classList.remove("hide");
+
+  load();
+}
+
+/* PRODUCT */
+function addProduct(){
+  if(role!="admin"){alert("No permission");return;}
+
+  let p=products.find(x=>x.name==name.value);
+
+  if(p){
+    p.price=Number(price.value);
+    p.stock=Number(stock.value);
+  }else{
+    products.push({
+      name:name.value,
+      price:Number(price.value),
+      stock:Number(stock.value)
+    });
+  }
+
+  save();
+  load();
+}
+
+/* SELL */
+function sell(){
+  let p=products.find(x=>x.name==sellName.value);
+  let q=Number(sellQty.value);
+
+  if(!p || p.stock<q){alert("Stock error");return;}
+
+  p.stock-=q;
+  save();
+  load();
+}
+
+/* CREDIT */
+function addCredit(){
+  credits.push({
+    name:cname.value,
+    phone:cphone.value,
+    total:Number(ctotal.value),
+    paid:Number(cpaid.value),
+    remain:Number(ctotal.value)-Number(cpaid.value)
+  });
+
+  save();
+  load();
+}
+
+/* LOAD */
+function load(){
+
+  /* PRODUCTS */
+  plist.innerHTML="";
+  products.forEach(p=>{
+    plist.innerHTML+=`
+      <tr>
+        <td>${p.name}</td>
+        <td>${p.price}</td>
+        <td>${p.stock}</td>
+      </tr>`;
+  });
+
+  /* CREDIT */
+  clist.innerHTML="";
+  credits.forEach(c=>{
+    clist.innerHTML+=`
+      <tr>
+        <td>${c.name}</td>
+        <td>${c.phone}</td>
+        <td>${c.total}</td>
+        <td>${c.paid}</td>
+        <td>${c.remain}</td>
+      </tr>`;
+  });
+}
+
+/* SEARCH */
+function search(){
+  let q = searchBox.value.toLowerCase();
+  let rows = document.querySelectorAll("#plist tr");
+
+  rows.forEach(r=>{
+    let name = r.children[0].innerText.toLowerCase();
+    r.style.display = name.includes(q) ? "" : "none";
+  });
+}
+
+</script>
+
+</body>
+</html>
